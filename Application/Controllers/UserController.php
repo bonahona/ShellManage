@@ -131,13 +131,13 @@ class UserController extends Controller
 
     }
 
-    public function RevokeAccess($id)
+    public function RevokeAccess($id, $applicationId = null)
     {
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
 
-        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(0, $id);
+        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(0, $id, $applicationId);
 
         return $this->Redirect('/User/Details/' . $id);
     }
