@@ -15,13 +15,13 @@
     <?php foreach($Applications as $application):?>
         <tr>
             <td>
-                <?php echo $this->Html->Link('Applications/Details/' . $application['Id'], $application['Id']);?>
+                <?php echo $this->Html->Link('/Applications/Details/' . $application['Id'], $application['Id']);?>
             </td>
             <td>
-                <?php echo $this->Html->Link('Applications/Details/' . $application['Id'], $application['ApplicationName']);?>
+                <?php echo $this->Html->Link('/Applications/Details/' . $application['Id'], $application['ApplicationName']);?>
             </td>
             <td>
-                <?php echo $this->Html->Link('Applications/Details/' . $application['Id'], $application['DefaultUserLevel']);?>
+                <?php echo $this->Html->Link('/Applications/Details/' . $application['Id'], $application['DefaultUserLevel']);?>
             </td>
             <td>
                 <?php echo $this->Html->Link('/Applications/Edit/'  . $application['Id'], 'Edit');?> |
