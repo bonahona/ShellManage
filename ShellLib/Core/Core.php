@@ -463,7 +463,9 @@ class Core
         call_user_func_array(array($controller, $actionName), $variables);
 
         // Clean up
-        $this->Database->Close();
+		if($this->Database != null){
+			$this->Database->Close();
+		}
     }
 
     public function GetControllerPath($requestData)
