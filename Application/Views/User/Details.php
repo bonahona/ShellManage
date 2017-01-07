@@ -44,10 +44,10 @@
                         <td><?php echo $privilege['ShellApplication']['ApplicationName'];?></td>
                         <td><?php echo $privilege['UserLevel'];?></td>
                         <td>
-                            <?php if($privilege == 0):?>
+                            <?php if($privilege['UserLevel'] == 0):?>
                                 <a href="<?php echo "/User/GrantAccess/" . $privilege['ShellUserId'] . "/" . $privilege['ShellApplicationId'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-up"></span></a>
                             <?php else:?>
-                                <a href="<?php echo "/User/GrantAccess/" . $privilege['ShellUserId'] . "/" . $privilege['ShellApplicationId'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-down"></span></a>
+                                <a href="<?php echo "/User/RevokeAccess/" . $privilege['ShellUserId'] . "/" . $privilege['ShellApplicationId'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-down"></span></a>
                             <?php endif;?>
                         </td>
                     </tr>
