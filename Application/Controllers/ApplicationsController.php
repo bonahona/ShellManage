@@ -10,6 +10,8 @@ class ApplicationsController extends Controller
 
     public function Index()
     {
+        $this->Title = 'Applications';
+
         $applications = $this->Helpers->ShellAuth->GetApplication();
         $this->Set('Applications', $applications['Data']);
         return $this->View();
@@ -17,18 +19,22 @@ class ApplicationsController extends Controller
 
     public function Details($id)
     {
+        $this->Title = 'Aplication Details';
+
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
 
         $response = $this->Helpers->ShellAuth->GetApplication($id);
-        $application = $response['Data'];
+        $application = First($response['Data']);
         $this->Set('Application', $application);
         return $this->View();
     }
 
     public function Create()
     {
+        $this->Title = 'Create Application';
+
         if($this->IsPost() && !$this->Data->IsEmpty()){
             $application = $this->Data->RawParse('ShellApplication');
 
@@ -57,6 +63,8 @@ class ApplicationsController extends Controller
 
     public function Edit($id)
     {
+        $this->Title = 'Edit Application';
+
         if($this->IsPost() && !$this->Data->IsEmpty()){
             $shellApplication = $this->Data->RawParse('ShellApplication');
 

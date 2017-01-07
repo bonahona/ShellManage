@@ -1,33 +1,38 @@
 <h1>Users</h1>
 
-<div>
-    <?php echo $this->Html->Link('/User/Create', 'Create new user');?>
+<div class="row">
+    <div class="col-lg-2">
+        <a href="/User/Create" class="btn btn-md btn-primary">Create new</a>
+    </div>
 </div>
 
-<table>
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Name</th>
-            <th>Display name</th>
-            <th>&nbsp;</th>
-        </tr>
-    </thead>
-    <tbody>
-        <?php foreach($Users as $user):?>
-            <tr>
-                <td><?php echo $this->Html->Link('/User/Details/' . $user['Id'], $user['Id']);?></td>
-                <td><?php echo $this->Html->Link('/User/Details/' . $user['Id'], $user['Username']);?></td>
-                <td><?php echo $this->Html->Link('/User/Details/' . $user['Id'], $user['DisplayName']);?></td>
-                <td>
-                    <?php echo $this->Html->Link('/User/Edit/' . $user['Id'], 'Edit');?> |
-                    <?php echo $this->Html->Link('/User/Delete/' . $user['Id'], 'Delete');?>
-                </td>
-            </tr>
-        <?php endforeach;?>
-    </tbody>
-</table>
+<div class="row">
+    <div class="col-lg-6">
+        <table class="table table-responsive">
+            <thead>
+                <tr>
+                    <th class="col-lg-5">Name</th>
+                    <th class="col-lg-5">Username</th>
+                    <th class="col-lg-1">&nbsp;</th>
+                    <th class="col-lg-1">&nbsp;</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach($Users as $user):?>
+                    <tr>
+                        <td><a href="<?php echo "/User/Details/" . $user['Id'];?>"><?php echo $user['DisplayName'];?></a></td>
+                        <td><?php echo $user['Username'];?></td>
+                        <td><a href="<?php echo "/User/Edit/" . $user['Id'];?>" class="btn btn-sm- btn-default"><span class="glyphicon glyphicon-edit"></span></td>
+                        <td><a href="<?php echo "/User/Delete/" . $user['Id'];?>" class="btn btn-sm- btn-default"><span class="glyphicon glyphicon-trash"></span></td>
+                    </tr>
+                <?php endforeach;?>
+            </tbody>
+        </table>
+    </div>
+</div>
 
-<div>
-    <?php echo $this->Html->Link('/', 'Back');?>
+<div class="row">
+    <div class="col-lg-2">
+        <a href="/User/Create/" class="btn btn-md- btn-primary">Create</a>
+    </div>
 </div>

@@ -1,41 +1,36 @@
 <h1>Create application</h1>
-<?php echo $this->Form->Start('ShellApplication');?>
-<div>
-    <div class="label">Application Name</div>
-    <?php echo $this->Form->Input('ApplicationName');?>
-    <?php echo $this->Form->ValidationErrorFor('ApplicationName');?>
-</div>
-<div class="clear"></div>
-<div>
-    <div class="label">Default user level</div>
-    <?php echo $this->Form->Input('DefaultUserLevel');?>
-    <?php echo $this->Form->ValidationErrorFor('DefaultUserLevel');?>
-</div>
-<div class="clear"></div>
-<div>
-    <div class="label">Public key</div>
-    <?php echo $this->Form->Input('RsaPublicKey');?>
-    <?php echo $this->Form->ValidationErrorFor('RsaPublicKey');?>
-</div>
-<div class="clear"></div>
-<div>
-    <div class="label">Private key</div>
-    <?php echo $this->Form->Input('RsaPrivateKey');?>
-    <?php echo $this->Form->ValidationErrorFor('RsaPrivateKey');?>
-</div>
-<div class="clear"></div>
-<div>
-    <div class="label">Is inactive</div>
-    <?php echo $this->Form->Bool('IsInactive');?>
-    <?php echo $this->Form->ValidationErrorFor('IsInactive');?>
-</div>
-<div class="clear"></div>
 
-<div>
-    <div class="label">&nbsp;</div>
-    <?php echo $this->Form->Submit('Create');?>
+<div class="row">
+    <div class="col-lg-4">
+        <?php echo $this->Form->Start('ShellApplication');?>
+        <div class="form-group">
+            <label>Applicatiom Name</label>
+            <?php echo $this->Form->Input('ApplicationName', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+        <div class="form-group">
+            <label>Default user Level</label>
+            <?php echo $this->Form->Input('DefaultUserLevel', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+        <div class="form-group">
+            <label>Public key</label>
+            <?php echo $this->Form->Input('RsaPublicKey', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+        <div class="form-group">
+            <label>Private key</label>
+            <?php echo $this->Form->Input('RsaPrivateKey', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+        <div class="clear"></div>
+        <div>
+            <label>Is inactive</label>
+            <?php echo $this->Form->Bool('IsInactive');?>
+        </div>
+        <?php echo $this->Form->Submit('Create', array('attributes' => array('class' => 'btn btn-md btn-default')));?>
+        <?php echo $this->Form->End();?>
+    </div>
 </div>
-<?php echo $this->Form->End();?>
-<div>
-    <?php echo $this->Html->Link('/Applications/', 'Back');?>
+
+<div class="row">
+    <div class="col-lg-4">
+        <?php echo $this->Html->Link('/Applications/', 'Back');?>
+    </div>
 </div>

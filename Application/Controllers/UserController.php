@@ -24,6 +24,8 @@ class UserController extends Controller
 
     public function LocalUsers()
     {
+        $this->Title = "Local Users";
+
         $response = $this->Helpers->ShellAuth->GetLocalUsers();
 
         $this->Set('Users', $response['Data']);
@@ -32,6 +34,8 @@ class UserController extends Controller
 
     public function Details($id)
     {
+        $this->Title = 'User details';
+
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
@@ -43,11 +47,13 @@ class UserController extends Controller
             $this->Set('User', $user);
         }
 
-        $this->View();
+        return $this->View();
     }
 
     public function Create()
     {
+        $this->Title = 'Create User';
+
         if($this->IsPost() && !$this->Data->IsEmpty()){
             $user = $this->Data->RawParse('ShellUser');
 
@@ -95,6 +101,8 @@ class UserController extends Controller
 
     public function ResetPassword($id)
     {
+        $this->Title = 'Reset Password';
+        
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
@@ -127,8 +135,12 @@ class UserController extends Controller
 
         $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(1, $id, $applicationId);
 
-        return $this->Redirect('/User/Details/' . $id);
 
+        if(isset($_GET['ref'])){
+            return $this->Redirect($_GET['ref']);
+        }else {
+            return $this->Redirect('/User/Details/' . $id);
+        }
     }
 
     public function RevokeAccess($id, $applicationId = null)
@@ -139,7 +151,11 @@ class UserController extends Controller
 
         $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(0, $id, $applicationId);
 
-        return $this->Redirect('/User/Details/' . $id);
+        if(isset($_GET['ref'])){
+            return $this->Redirect($_GET['ref']);
+        }else {
+            return $this->Redirect('/User/Details/' . $id);
+        }
     }
 
     public function Delete($id)
@@ -152,8 +168,11 @@ class UserController extends Controller
         return $this->Redirect('/User/');
     }
 
-    public function Login($ref)
+    public function Login($ref = null)
     {
+        $this->Title = 'Login';
+        $this->Layout = 'Login';
+
         if($this->IsPost()) {
             $user = $this->Data->RawParse('User');
 

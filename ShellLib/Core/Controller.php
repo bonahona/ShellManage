@@ -6,28 +6,75 @@ define('DEFAULT_RETURN_CODE', '200');
 class Controller
 {
     // State data
+    /* @var string */
     public $Action;
+
+    /* @var string */
     public $Controller;
+
+    /* @var string */
     public $Verb;
+
+    /* @var string */
     public $RequestUri;
+
+    /* @var string */
     public $RequestString;
+
+    /* @var array */
     public $Parameters = array();        // Stores all parameters sent in in the uri that follow the Controller and Action
+
+    /* @var Models */
     public $Models;
+
+    /* @var FormHelper */
     public $Form;
+
+    /* @var HtmlHelper */
     public $Html;
+
+    /* @var ModelValidationHelper */
     public $ModelValidation;
+
+    /* @var Core */
     public $Core;                       // Main core for this controller
-    public $CurrentCore;                // Should usually be the same one as the Core, bit might, during rendering, be set to some other one for resource purposes
+
+    /* @var Core */
+    public $CurrentCore;                // Should usually be the same one as the Core, but might during rendering, be set to some other one for resource purposes
+
+    /* @var array */
     public $Config;
+
+    /* @var Helpers */
     public $Helpers;                    // Reference the main core's helpers list
 
+    /* @var Logging */
+    public $Logging;
+
+    /* @var Cache */
+    public $Cache;                      // Reference to the Core's cache object
+
     // Data sent
+
+    /* @var DataHelper */
     public $Post;                       // Stores all Post data variables sent in
+
+    /* @var DataHelper */
     public $Get;                        // Stores all get variables sent in
+
+    /* @var DataHelper */
     public $Data;                       // Stores both the Get and Post variables
+
+    /* @var DataHelper */
     public $Files;                      // Stores any files sent with the request
+
+    /* @var SessionHelper */
     public $Session = array();          // Stores all the session data
+
+    /* @var array */
     public $Cookies = array();          // Stores all cookies sent
+
+    /* @var string */
     public $Server = array();           // Stores all server variables
 
     // Response data
@@ -56,7 +103,18 @@ class Controller
         $this->Session = new SessionHelper();
     }
 
-    public function GetCore()
+    public function SetFromPreviousResult($httpResult = null)
+    {
+        // Nothing to set
+        if($httpResult == null){
+            return;
+        }
+
+        $this->ReturnCode = $httpResult->ReturnCode;
+        $this->MimeType = $httpResult->MimeType;
+    }
+
+    public  function GetCore()
     {
         return $this->Core;
     }
@@ -71,11 +129,11 @@ class Controller
         return $this->ViewData;
     }
 
-    public function IsPost(){
+    protected function IsPost(){
         return ($this->Verb == "POST");
     }
 
-    public function IsGet()
+    protected function IsGet()
     {
         return ($this->Verb == "GET");
     }
@@ -97,10 +155,8 @@ class Controller
         $partialViewName = PartialViewPath($this->Core, $viewName);
 
         if(!file_exists($partialViewName)){
-            die('Partial view missing ' . $partialViewName);
+            trigger_error('Partial view missing ' . $partialViewName, E_USER_ERROR);
         }
-
-        $this->BeforeRender();
 
         if($partialViewVars != null){
             if(is_array($partialViewVars)) {
@@ -108,7 +164,7 @@ class Controller
                     $$key = $var;
                 }
             }else{
-                die('$PartialViewVars is not an array');
+                trigger_error('$PartialViewVars is not an array', E_USER_ERROR);
             }
         }
         include($partialViewName);
@@ -117,6 +173,10 @@ class Controller
     // Different ways to render something
     protected function View($viewName = null){
 
+        $result = new HttpResult();
+        $result->ReturnCode = $this->ReturnCode;
+        $result->MimeType = $this->MimeType;
+
         if($viewName == null){
             $viewName = $this->Action;
         }
@@ -124,7 +184,7 @@ class Controller
         // Make sure the view exists
         $viewPath = ViewPath($this->Core, $this->Controller, $viewName);
         if(!file_exists($viewPath)) {
-            die('Could not find view ' . $viewPath);
+            trigger_error('Could not find view ' . $viewPath, E_USER_ERROR);
         }
 
         // Enable all the the view variables to be available in the view
@@ -142,8 +202,8 @@ class Controller
         $layouts = $this->GetLayoutPaths();
 
         if(empty($layouts)){
-            echo $view;
-            return;
+            $result->Content = $view;
+            return $result;
         }
 
         // Go through the layout candidate files in order and make sure they exists. The first match will act as the layout for this view
@@ -157,44 +217,65 @@ class Controller
         }
 
         if($foundLayout == null){
-            echo $view;
+            $result->Content = $view;
         }else{
             $this->CurrentCore = $foundLayout['core'];
+            ob_start();
             include($foundLayout['layout']);
+            $layoutView = ob_get_clean();
             $this->CurrentCore = $this->Core;
+
+            $result->Content = $layoutView;
         }
+
+        return $result;
     }
 
     protected function Json($data){
-        header('Content-Type: application/json');
-        echo json_encode($data);
+        $result = new HttpResult();
+        $result->MimeType = 'application/json';
+        $result->Content = json_encode($data);
+
+        return $result;
+    }
+
+    protected function Text($text)
+    {
+        $result = new HttpResult();
+        $result->MimeType = 'text/plain';
+        $result->Content = $text;
+
+        return $result;
     }
 
     protected function Redirect($url, $vars = null, $code = 301){
+
+        $locationString = '';
         if($vars != null){
             $queryParts = array();
             foreach($vars as $key => $value){
                 $queryParts[] = "$key=$value";
                 $queryString = implode(',', $queryParts);
-                header('Location:' . Url($url . '?' . $queryString), true, $code);
+                $locationString = Url($url . '?' . $queryString);
             }
         }else {
-            header('Location: ' . Url($url), true, $code);
+            $locationString =  Url($url);
         }
-        exit;
-    }
 
-    protected function SetType($type){
-        header('Content-Type: ' . $type);
+        $result = new HttpResult();
+        $result->Location = $locationString;
+        $result->ReturnCode = $code;
+
+        var_dump($result);
+        return $result;
     }
 
     protected function HttpStatus($statusCode)
     {
-        if(function_exists('http_response_code')) {
-            http_response_code("404");
-        }else{
-            echo "404";
-        }
+        $result = new HttpResult();
+        $result->ReturnCode = $statusCode;
+
+        return $result;
     }
 
     function HttpNotFound()
@@ -266,7 +347,7 @@ class Controller
         }
     }
 
-    public function GetCurrentUser()
+    protected function GetCurrentUser()
     {
         if(isset($this->Session['CurrentUser'])){
             return $this->Session['CurrentUser'];
@@ -280,7 +361,30 @@ class Controller
     }
 
     // Function is called after the action but before the page is rendered
-    public function BeforeRender(){
-        header('Content-Type: ' . $this->MimeType);
+    protected function BeforeRender(){
+    }
+
+    // Adds a request identifier to the list of cached output for automatic output cache handling
+    protected function EnableOutputCacheFor($requestData, $validity)
+    {
+
+    }
+
+    // Manual adding of an output cache entry or updates an existing one
+    protected function AddOutputCache($requestData, $output, $validity)
+    {
+
+    }
+
+    // Manual invalidation
+    protected function InvalidateOutputCache($requestData)
+    {
+
+    }
+
+    // Manual check for a cache entry
+    protected function IsOutputCached($requestData)
+    {
+
     }
 }

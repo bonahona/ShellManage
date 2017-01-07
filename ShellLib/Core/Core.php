@@ -1,29 +1,38 @@
 <?php
 define('SERVER_ROOT', str_ireplace('/Index.php', '', $_SERVER['PHP_SELF']));
-define('APPLICATION_ROOT',      $_SERVER['DOCUMENT_ROOT']);
-define('APPLICATION_FOLDER',    '/Application');
-define('CONFIG_FOLDER',         '/Config/');
-define('CONTROLLER_FOLDER',     '/Controllers/');
-define('MODELS_FOLDER',         '/Models/');
-define('PLUGINS_FOLDER',        '/Plugins/');
-define('HELPERS_FOLDER',        '/Helpers/');
-define('VIEWS_FOLDER',          '/Views/');
-define('PARTIAL_FOLDER',        '/Views/Partial/');
-define('LAYOUTS_FOLDER',        '/Views/Layouts');
-define('MODEL_CACHE_FOLDER',    '/Application/Temp/Cache/Models/');
-define('CSS_FOLDER',            '/Content/Css/');
-define('JS_FOLDER',             '/Content/Js/');
-define('IMAGE_FOLDER',          '/Content/Images/');
-define('DATABASE_DRIVER_FOLDER','./ShellLib/DatabaseDrivers/');
+define('APPLICATION_ROOT',          $_SERVER['DOCUMENT_ROOT']);
+define('APPLICATION_FOLDER',        '/Application');
+define('CONFIG_FOLDER',             '/Config/');
+define('CONTROLLER_FOLDER',         '/Controllers/');
+define('MODELS_FOLDER',             '/Models/');
+define('PLUGINS_FOLDER',            '/Plugins/');
+define('HELPERS_FOLDER',            '/Helpers/');
+define('VIEWS_FOLDER',              '/Views/');
+define('PARTIAL_FOLDER',            '/Views/Partial/');
+define('LAYOUTS_FOLDER',            '/Views/Layouts');
+define('MODEL_CACHE_FOLDER',        '/Application/Temp/Cache/Models/');
+define('VIEW_CACHE_FOLDER',     '/Application/Temp/Cache/Views/');
+define('CSS_FOLDER',                '/Content/Css/');
+define('JS_FOLDER',                 '/Content/Js/');
+define('IMAGE_FOLDER',              '/Content/Images/');
+define('DATABASE_DRIVER_FOLDER',    './ShellLib/DatabaseDrivers/');
+define('LOGGER_FOLDER',             '/Loggers/');
+define('SHELL_LIB_LOGGERS_FOLDER',  '/ShellLib/Loggers/');
+define('OUTPUT_CACHE_FOLDER',       '/OutputCaches/');
+define('SHELL_LIB_OUTPUT_CACHE_FOLDER','/ShellLib/OutputCaches/');
 
 define('VIEW_FILE_ENDING', '.php');
 define('MODEL_CACHE_FILE_ENDING', '.model');
+define('OUTPUT_CACHE_FILE_ENDING', '.output');
 define('PHP_FILE_ENDING', '.php');
 define('CSS_FILE_ENDING', '.css');
 define('JS_FILE_ENDING', '.js');
 
+define('CORE_CLASS', 'Core');
+
 require_once('./ShellLib/Core/ConfigParser.php');
 require_once('./ShellLib/Core/Controller.php');
+require_once('./ShellLib/Core/HttpResult.php');
 require_once('./ShellLib/Core/ModelProxy.php');
 require_once('./ShellLib/Core/ModelProxyCollection.php');
 require_once('./ShellLib/Core/Model.php');
@@ -31,8 +40,12 @@ require_once('./ShellLib/Core/IDatabaseDriver.php');
 require_once('./ShellLib/Core/Models.php');
 require_once('./ShellLib/Core/Helpers.php');
 require_once('./ShellLib/Core/IHelper.php');
+require_once ('./ShellLib/Core/Routing.php');
+require_once('./ShellLib/Core/DatabaseWhereCondition.php');
+require_once('./ShellLib/Core/CustomObjectSorter.php');
 require_once('./ShellLib/Files/File.php');
 require_once('./ShellLib/Logging/Logging.php');
+require_once('./ShellLib/Core/Caching.php');
 require_once('./ShellLib/Helpers/DirectoryHelper.php');
 require_once('./ShellLib/Helpers/ModelHelper.php');
 require_once('./ShellLib/Helpers/UrlHelper.php');
@@ -63,15 +76,17 @@ class Core
     protected $About;                   // About file is only loaded if any feature requiring it is called.
 
     protected $Logging;
+    protected $Caching;
     protected $ModelCache;
     protected $Models;
     protected $Helpers;
     protected $ModelHelper;
     protected $RequestUrl;
+    protected $RequestString;
     protected $Database;
     protected $Controller;
 
-    protected $IsPrimaryCode;
+    protected $IsPrimaryCore;
 
     // Used for the primary core of the application
     protected $Plugins;
@@ -90,10 +105,12 @@ class Core
     protected $CssFolder;
     protected $JsFolder;
     protected $ImageFolder;
+    protected $LoggerFolder;
+    protected $CacheFolder;
 
     public function GetIsPrimaryCore()
     {
-        return $this->IsPrimaryCode;
+        return $this->IsPrimaryCore;
     }
 
     public function &GetModelCache(){
@@ -106,6 +123,10 @@ class Core
 
     public function &GetLogging(){
         return $this->Logging;
+    }
+
+    public function &GetCaching(){
+        return $this->Caching;
     }
 
     public function &GetModelHelper(){
@@ -201,7 +222,7 @@ class Core
     function __construct($subPath = null, $primaryCore = null)
     {
         if($subPath == null){
-            $this->IsPrimaryCode = true;
+            $this->IsPrimaryCore = true;
             self::$Instance = $this;
             $this->PrimaryCore = $this;
 
@@ -209,9 +230,18 @@ class Core
             $this->ModelHelper = new ModelHelper();
 
             $this->SetupFolders();
+
             if(!$this->ReadConfig()){
-                die("Failed to read ApplicationConfig");
+                trigger_error("Failed to read ApplicationConfig", E_USER_ERROR);trigger_error("Failed to read ApplicationConfig", E_USER_ERROR);
             }
+
+            // Logging
+            $this->Logging = new Logging();
+            $this->FindShellLibLoggers();
+            $this->FindLoggers($this->LoggerFolder);
+
+            // Caching
+            $this->Caching = new Caching();
 
             $this->Helpers = new Helpers();
             $this->SetupHelpers();
@@ -223,14 +253,19 @@ class Core
             $this->SetupPlugins();
 
         }else{
-            $this->IsPrimaryCode = false;
+            $this->IsPrimaryCore = false;
             $this->PluginPath = $subPath;
             $this->PrimaryCore = $primaryCore;
 
             $this->SetupPluginFolders();
-            $this->ReadPluginConfig();
-            $this->CacheModels();
             $this->Logging = $primaryCore->GetLogging();
+            $this->FindLoggers($this->LoggerFolder);
+
+            $this->ReadPluginConfig();
+
+            $this->FindLoggers($this->LoggerFolder);
+
+            $this->CacheModels();
             $this->Database = $primaryCore->GetDatabase();
             $this->Helpers = $primaryCore->GetHelpers();
             $this->SetupHelpers();
@@ -255,6 +290,7 @@ class Core
         $this->CssFolder = SERVER_ROOT . APPLICATION_FOLDER . CSS_FOLDER;
         $this->JsFolder = SERVER_ROOT . APPLICATION_FOLDER . JS_FOLDER;
         $this->ImageFolder = SERVER_ROOT . APPLICATION_FOLDER . IMAGE_FOLDER;
+        $this->LoggerFolder = APPLICATION_FOLDER . LOGGER_FOLDER;
     }
 
     protected function SetupPluginFolders()
@@ -269,6 +305,7 @@ class Core
         $this->CssFolder =  $this->PluginPath . CSS_FOLDER;
         $this->JsFolder =  $this->PluginPath . JS_FOLDER;
         $this->ImageFolder =  $this->PluginPath . IMAGE_FOLDER;
+        $this->LoggerFolder = $this->PluginPath . LOGGER_FOLDER;
     }
 
     protected function ReadConfig()
@@ -301,9 +338,8 @@ class Core
 
     protected function SetupLogs()
     {
-        $this->Logging = new Logging();
         if(!$this->Logging->SetupLoggers($this->ApplicationConfig)){
-            die('Failed to setup logging');
+            trigger_error("Failed to setup logging", E_USER_ERROR);
         }
     }
 
@@ -312,7 +348,7 @@ class Core
         if(!empty($this->DatabaseConfig)) {
 
             $databaseType = $this->DatabaseConfig['Database']['DatabaseType'];
-
+            
             // Handle the provider types given
             if($databaseType == 'MySqli'){
                 $databaseProviderPath = DATABASE_DRIVER_FOLDER . 'MySqliDatabase.php';
@@ -323,7 +359,7 @@ class Core
                 require_once($databaseProviderPath);
                 $this->Database = new PdoDatabase($this, $this->DatabaseConfig);
             }else{
-                die("Unknown database provider type: $databaseType");
+                trigger_error("Unknown database provider type: $databaseType", E_USER_ERROR);
             }
         }
     }
@@ -343,6 +379,47 @@ class Core
         return $dontCacheModels;
     }
 
+    protected function DebugDieOnRoutingError()
+    {
+        // Read debug data from the log
+        $dieOnRoutingError = false;
+        if($this->ApplicationConfig !== false) {
+            if (array_key_exists('Debug', $this->ApplicationConfig)) {
+                if (array_key_exists('DieOnRoutingError', $this->ApplicationConfig['Debug'])) {
+                    $dieOnRoutingError = $this->ApplicationConfig['Debug']['DieOnRoutingError'];
+                }
+            }
+        }
+
+        return $dieOnRoutingError;
+    }
+
+    // Find the logger classes available in the default shell lib folders
+    protected  function FindShellLibLoggers()
+    {
+        $shellLibLoggerFolder = Directory(SHELL_LIB_LOGGERS_FOLDER);
+
+        $loggerFiles = GetAllFiles($shellLibLoggerFolder);
+        foreach($loggerFiles as $loggerFile){
+            $this->GetLogging()->AddAvailableLogger($loggerFile, $shellLibLoggerFolder . $loggerFile);
+        }
+    }
+
+    // Find loggers distributed in the application folder or in plugins
+    protected  function FindLoggers($loggerDirectoryName)
+    {
+        $loggerDirectory = Directory($loggerDirectoryName);
+        // If the folder does not exists, what's the point of looking through it?
+        if(!is_dir($loggerDirectory)){
+            return;
+        }
+
+        $loggerFiles = GetAllFiles($loggerDirectory);
+        foreach($loggerFiles as $loggerFile){
+            $this->GetLogging()->AddAvailableLogger($loggerFile, $loggerDirectory . $loggerFile);
+        }
+    }
+
     // Iterates over each model to make sure they are cached
     protected function CacheModels()
     {
@@ -351,6 +428,7 @@ class Core
 
         // Make sure the model folder exists
         $modelCacheFolder = Directory($this->ModelFolder);
+
         if(!is_dir($modelCacheFolder)){
             mkdir($modelCacheFolder, 777, true);
         }
@@ -414,64 +492,119 @@ class Core
     {
         // Find the current request folder
         $requestRoot = $_SERVER['SCRIPT_NAME'];
-        $requestUrl = $_SERVER['REQUEST_URI'];
+        $this->RequestString = $_SERVER['REQUEST_URI'];
+        $this->RequestUrl = $this->FixRequestUrl($this->RequestString);
 
-        $requestData = $this->ParseUrl($requestRoot, $requestUrl);
-        $controllerName = $requestData['ControllerName'];
-        $actionName = $requestData['ActionName'];
-        $variables = $requestData['Variables'];
+        $routingEngine = new Routing($this->RoutesConfig);
+        $requestData = $routingEngine->ParseUrl($requestRoot, $this->RequestUrl);
 
-        // Find the controller to use
-        $controllerClassName = $controllerName . 'Controller';
-        $controllerPath = $this->GetControllerPath($requestData);
+        if($requestData != null) {
+            $controllerName = $requestData['ControllerName'];
+            $actionName     = $requestData['ActionName'];
+            $variables      = $requestData['Variables'];
 
-        // Make sure the required controllers source file exists
-        if ($controllerPath === false){
-            die('Controller path ' . $controllerClassName . ' not found');
+            $handler = $this->CreateHandler($controllerName, $actionName, $requestData);
         }else{
-            require_once($controllerPath['path']);
+            $handler = array(
+                'error' => 1,
+                'message' => 'Routing engine could not map request to a configured route'
+            );
         }
 
+        // The controller or the action does not exists. If debugging is on, die and give an error, otherwise reroute to the notFound route
+        if($handler['error'] == 1){
+            $dieOnRoutingError = $this->DebugDieOnRoutingError();
+            if($dieOnRoutingError){
+                trigger_error($handler['message'], E_USER_ERROR);
+            }else{
+                $notFoundHandler = $this->CreateNotFoundHandler($requestData);
 
-        // Instanciate the controller
-        if(class_exists($controllerClassName)) {
-            $controller = new $controllerClassName;
+                // If the not found handler is not found or has en error, there is not much to do
+                if($notFoundHandler['error'] == 1){
+                    trigger_error('NotFoundHandler: ' . $notFoundHandler['message'], E_USER_ERROR);
+                }
+
+                $controller = $notFoundHandler['controller'];
+                $actionName = $notFoundHandler['actionName'];
+            }
         }else{
-            die('Controller class ' . $controllerClassName . ' dont exists');
+            $controller = $handler['controller'];
         }
-
-        if(!method_exists($controller, $actionName)){
-            die('Called action ' . $actionName . ' does not exists');
-        }
-
-        $controller->Core           = $controllerPath['core'];
-        $controller->CurrentCore    = $controllerPath['core'];
-        $controller->Config         = $controllerPath['core']->GetApplicationConfig();
-        $controller->Action         = $actionName;
-        $controller->Controller     = $controllerName;
-        $controller->Layout         = $this->ApplicationConfig['Application']['DefaultLayout'];
-        $controller->Models         = $this->Models;
-        $controller->RequestUri     = $requestData['RequestUri'];
-        $controller->RequestString  = $requestData['RequestString'];
-        $controller->Helpers        = $this->Helpers;
-        $controller->Helpers->SetCurrentController($controller);
 
         $this->ParseData($controller);
 
-        // Call the action
-        $controller->BeforeAction();
-        call_user_func_array(array($controller, $actionName), $variables);
+        // Call the action and validate its result
+        $httpResult = $controller->BeforeAction();
+        $controller->SetFromPreviousResult($httpResult);
+
+        // If the return code is not 200, no normal code needs to run now
+        if($httpResult == null || $httpResult->ReturnCode == 200) {
+            $httpResult = call_user_func_array(array($controller, $actionName), $variables);
+
+            if ($httpResult == null) {
+                trigger_error('Called action ' . $controllerName . '->' . $actionName . ' does return null', E_USER_ERROR);
+            } else if (!is_a($httpResult, 'HttpResult')) {
+                trigger_error('Called action ' . $controllerName . '->' . $actionName . ' does not resturn a HttpResult object', E_USER_ERROR);
+            }
+        }
+
+        // 404 errors use the notFound route specified in the application config
+        if($httpResult->ReturnCode === 404){
+            $notFoundHandler = $this->CreateNotFoundHandler($requestData);
+
+            if($notFoundHandler['error'] == 1) {
+                trigger_error('NotFoundHandler: ' . $notFoundHandler['message'], E_USER_ERROR);
+            }else{
+                $notFoundController = $notFoundHandler['controller'];
+                $notFoundAction = $notFoundHandler['actionName'];
+
+                $controller->BeforeAction();
+                $httpResult = call_user_func_array(array($notFoundController, $notFoundAction), array());
+            }
+        }
+
+        $this->DisplayResult($httpResult);
 
         // Clean up
-		if($this->Database != null){
-			$this->Database->Close();
-		}
+        $this->Database->Close();
     }
 
-    public function GetControllerPath($requestData)
+    public  function DisplayResult($httpResult)
+    {
+        // Redirects needs to be handled first
+        if($httpResult->Location != null){
+            header('Location: ' . $httpResult->Location, true, $httpResult->ReturnCode);
+        }
+
+        // Set the HTTP return code (Default 200 = HTTP_OK)
+        if(function_exists('http_response_code')) {
+            http_response_code($httpResult->ReturnCode);
+        }
+
+        // Set the mime type of the request (Default is text/plain, standard for webpages are text/html and for json its application/json
+        header('Content-Type: ' . $httpResult->MimeType);
+
+        echo $httpResult->Content;
+    }
+
+    // Takes the raw request url and makes sure it follows the expected format
+    public function FixRequestUrl($requestUrl)
+    {
+        // If there is a query part of the request url, remove it
+        if(strpos($requestUrl, '?') !== false) {
+            $requestUrl = substr($requestUrl,0,strpos($requestUrl, '?'));
+        }
+
+        // Made sure the request url is valid with a trailing slash
+        $requestUrl = rtrim($requestUrl, '/') . '/';
+
+        return $requestUrl;
+    }
+
+    public function GetControllerPath($controllerName, $requestData)
     {
         $usedCore = $this;
-        $coreControllerPath = $this->CanHandleRoute($requestData);
+        $coreControllerPath = $this->CanHandleRoute($controllerName, $requestData);
 
         if($coreControllerPath !== false){
             return array(
@@ -481,7 +614,7 @@ class Core
         }else{
             foreach($this->Plugins as $plugin){
                 $usedCore = $plugin;
-                $pluginControllerPath = $plugin->CanHandleRoute($requestData);
+                $pluginControllerPath = $plugin->CanHandleRoute($controllerName, $requestData);
                 if($pluginControllerPath !== false){
                     return array(
                         'path' => $pluginControllerPath,
@@ -494,9 +627,8 @@ class Core
         return false;
     }
 
-    public function CanHandleRoute($requestData)
+    public function CanHandleRoute($controllerName)
     {
-        $controllerName = $requestData['ControllerName'];
         $controllerClassName = $controllerName . 'Controller';
         $controllerPath = Directory($this->GetControllerFolder() . $controllerClassName . '.php');
 
@@ -508,79 +640,99 @@ class Core
         }
     }
 
-    protected function ParseUrl($requestRoot, $requestUrl)
+    public function GetDeclaredMethods($className) {
+        $reflector = new ReflectionClass($className);
+        $methodNames = array();
+        foreach ($reflector->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
+            if ($method->class === $className) {
+                $methodNames[] = $method->name;
+            }
+        }
+        return $methodNames;
+    }
+
+    public function CreateHandler($controllerName, $actionName, $requestData)
     {
-        $requestString = $requestUrl;
+        // Find the controller to use
+        $controllerClassName = $controllerName . 'Controller';
+        $controllerPath = $this->GetControllerPath($controllerName, $requestData);
 
-        // If there is a query part of the request url, remove it
-        if(strpos($requestUrl, '?') !== false) {
-            $requestUrl = substr($requestUrl,0,strpos($requestUrl, '?'));
+        // Make sure the required controllers source file exists
+        if ($controllerPath === false){
+            return array(
+                'error' => 1,
+                'message' => 'Controller path ' . $controllerClassName . ' not found'
+            );
         }
 
-        // Made sure the request url is valid with a trailing slash
-        $requestUrl = rtrim($requestUrl, '/') . '/';
+        require_once($controllerPath['path']);
 
-        // First, go trough the routes in the config and see if there is a route overriding the default routing
-        foreach($this->RoutesConfig['Routes'] as $route => $routeData) {
-            if (strcasecmp($route, $requestUrl) == 0) {
-                return array(
-                    'ControllerName' => $routeData['Controller'],
-                    'ActionName' => $routeData['Action'],
-                    'Variables' => array(),
-                    'RequestUri' => $requestUrl,
-                    'RequestString' => $requestString
-
-                );
-            }
+        // Instanciate the controller
+        if(!class_exists($controllerClassName)) {
+            return array(
+                'error' => 1,
+                'message' => 'Controller class ' . $controllerClassName . ' dont exists'
+            );
         }
 
-        $requestPath = explode('/', $requestRoot);
+        $controller = new $controllerClassName;
 
-        // Remove only the last part of the string
-        $requestRoot = str_replace(end($requestPath), '', $requestRoot);
-
-
-        // If the request root is the root, there's nothing to clear out
-        if($requestRoot != '/') {
-            $requestResource = str_replace($requestRoot, '', $requestUrl);
-        }else{
-            $requestResource = $requestUrl;
+        if(!method_exists($controller, $actionName)){
+            return array(
+                'error' => 1,
+                'message' => 'Called action ' . $actionName . ' does not exists'
+            );
         }
 
-        $this->RequestUrl = $requestUrl;
-
-        $requestParameters = explode('/', $requestResource);
-
-        // Check if a specific controller has been specified
-        if(!empty($requestParameters[1])){
-            $controllerName = $requestParameters[1];
-        }else{
-            $controllerName = $this->ApplicationConfig['Application']['DefaultController'];
+        $publicMethods = $this->GetDeclaredMethods($controllerClassName);
+        if(!in_array($actionName, $publicMethods)){
+            return array(
+                'error' => 1,
+                'message' => 'Called action is not public is does not exists'
+            );
         }
 
-        // Find if a specific action has been specified
-        if(!empty($requestParameters[2])){
-            $actionName = $requestParameters[2];
-        }else{
-            $actionName = $this->ApplicationConfig['Application']['DefaultAction'];
-        }
-
-        // Go through the rest of the parameters to filter out the variables
-        $variables = array();
-        foreach($requestParameters as $key => $parameter){
-            // The first 3 are not used as variables
-            if($key != 0 && $key != 1 && $key != 2){
-                $variables[] = $parameter;
-            }
-        }
+        $controller->Core           = $controllerPath['core'];
+        $controller->CurrentCore    = $controllerPath['core'];
+        $controller->Config         = $controllerPath['core']->GetApplicationConfig();
+        $controller->Action         = $actionName;
+        $controller->Controller     = $controllerName;
+        $controller->Layout         = $this->ApplicationConfig['Application']['DefaultLayout'];
+        $controller->Models         = $this->Models;
+        $controller->RequestUri     = $this->RequestUrl;
+        $controller->RequestString  = $this->RequestString;
+        $controller->Parameters     = $requestData['Variables'];
+        $controller->Helpers        = $this->Helpers;
+        $controller->Logging        = $this->Logging;
+        $controller->Caching        = $this->Caching;
+        $controller->Helpers->SetCurrentController($controller);
 
         return array(
-            'ControllerName' => $controllerName,
-            'ActionName' => $actionName,
-            'Variables' => $variables,
-            'RequestUri' => $requestUrl,
-            'RequestString' => $requestString
+            'error' => 0,
+            'controller' => $controller,
+            'actionName' => $actionName
         );
+    }
+
+    public function CreateNotFoundHandler($requestData)
+    {
+        if(!isset($this->ApplicationConfig['Application']['NotFoundController'])){
+            return array(
+                'error' => 1,
+                'Application config missing NotFoundController'
+            );
+        }
+        $notFoundControllerName = $this->ApplicationConfig['Application']['NotFoundController'];
+
+        if(!isset($this->ApplicationConfig['Application']['NotFoundAction'])){
+            return array(
+                'error' => 1,
+                'Application config missing NotFoundAction'
+            );
+        }
+        $notFoundAction = $this->ApplicationConfig['Application']['NotFoundAction'];
+
+        return $this->CreateHandler($notFoundControllerName, $notFoundAction, $requestData);
     }
 
     function ParseData($controller)

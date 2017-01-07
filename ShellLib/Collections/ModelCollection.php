@@ -11,14 +11,22 @@ class ModelCollection implements ICollection
     public $ModelCache;
     public $ModelName;
 
-    public function Create()
+    public function Create($defaultValues = array())
     {
-        return new $this->ModelName($this);
+        $result = new $this->ModelName($this);
+
+        foreach($defaultValues as $key => $value){
+            $result->$key = $value;
+        }
+
+        $result->OnLoad();
+
+        return $result;
     }
 
     public function Find($id)
     {
-        $result = Core::$Instance->GetDatabase()->Find($this, $id);
+        $result = $this->GetInstance()->GetDatabase()->Find($this, $id);
 
         if($result != null) {
             $result->OnLoad();
@@ -29,13 +37,16 @@ class ModelCollection implements ICollection
 
     public function Exists($id)
     {
-        $result = Core::$Instance->GetDatabase()->Exists($this, $id);
+        $result = $this->GetInstance()->GetDatabase()->Exists($this, $id);
         return $result;
     }
 
     public function Where($conditions)
     {
-        $result = Core::$Instance->GetDatabase()->Where($this, $conditions);
+        $conditions = $this->ConvertConditions($conditions);
+        $whereConditions = $conditions->GetWhereClause();
+        $result = $this->GetInstance()->GetDatabase()->Where($this, $whereConditions['ConditionString'], $whereConditions['Parameters']);
+
         foreach($result as $entry){
             $entry->OnLoad();
         }
@@ -45,12 +56,26 @@ class ModelCollection implements ICollection
 
     public function Any($conditions)
     {
-        return Core::$Instance->GetDatabase()->Any($this, $conditions);
+        $conditions = $this->ConvertConditions($conditions);
+        $whereConditions = $conditions->GetWhereClause();
+        return $this->GetInstance()->GetDatabase()->Any($this, $whereConditions['ConditionString'], $whereConditions['Parameters']);
+    }
+
+    // Helper to make sure all conditions are proper DatabaseWhereCondition objects
+    private function ConvertConditions($conditions)
+    {
+        if(is_array($conditions)){
+            return AndCondition($conditions);
+        }else if(is_a($conditions, 'DatabaseWhereCondition')){
+            return $conditions;
+        }else{
+            trigger_error('Invalid WHERE condition for model query', E_USER_WARNING);
+        }
     }
 
     public function All()
     {
-        $result = Core::$Instance->GetDatabase()->All($this);
+        $result = $this->GetInstance()->GetDatabase()->All($this);
 
         foreach($result as $entry){
             $entry->OnLoad();
@@ -61,7 +86,12 @@ class ModelCollection implements ICollection
 
     public function Delete($model)
     {
-        return Core::$Instance->GetDatabase()->Delete($this, $model);
+        return $this->GetInstance()->GetDatabase()->Delete($this, $model);
+    }
+
+    public function Clear()
+    {
+        $this->GetInstance()->GetDatabase()->Clear($this);
     }
 
     public function Save($model){
@@ -74,12 +104,12 @@ class ModelCollection implements ICollection
 
     protected function Insert(&$model)
     {
-        return Core::$Instance->GetDatabase()->Insert($this, $model);
+        return $this->GetInstance()->GetDatabase()->Insert($this, $model);
     }
 
     protected function Update($model)
     {
-        return Core::$Instance->GetDatabase()->Update($this, $model);
+        return $this->GetInstance()->GetDatabase()->Update($this, $model);
     }
 
     public function Add($item)
@@ -89,12 +119,17 @@ class ModelCollection implements ICollection
 
     public function Keys()
     {
-        throw new Exception("ModelCollection::Keys() not supported");
+        return $this->GetInstance()->GetDatabase()->Keys($this);
     }
 
     public function OrderBy($field)
     {
+        trigger_error('ModelCollection does not support OrderBy. Use a selection first.', E_USER_ERROR);
+    }
 
+    public function OrderByDescending($field)
+    {
+        trigger_error('ModelCollection does not support OrderByDescending. Use a selection first.', E_USER_ERROR);
     }
 
     public function Take($count)
@@ -104,7 +139,7 @@ class ModelCollection implements ICollection
 
     public function First()
     {
-        $result = Core::$Instance->GetDatabase()->First($this);
+        $result = $this->GetInstance()->GetDatabase()->First($this);
 
         if($result != null) {
             $result->OnLoad();
@@ -116,5 +151,13 @@ class ModelCollection implements ICollection
     public function Copy($item)
     {
         throw new Exception("ModelCollection::Copy() not supported");
+    }
+
+    protected function GetInstance()
+    {
+        $coreInstanceProperty = new ReflectionProperty(CORE_CLASS, 'Instance');
+        $coreInstance =  $coreInstanceProperty->getValue();
+
+        return $coreInstance;
     }
 }
