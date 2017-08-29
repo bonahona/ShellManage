@@ -7,7 +7,7 @@
         "PublicKey": "-"
     },
     "ShellAuthServer": {
-        "Server": "auth",
+        "Server": "auth-site",
         "Port" : "80",
         "MethodPaths": {
             "CreateApplication": "/application/create",
