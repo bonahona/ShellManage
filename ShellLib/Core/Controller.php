@@ -266,7 +266,6 @@ class Controller
         $result->Location = $locationString;
         $result->ReturnCode = $code;
 
-        var_dump($result);
         return $result;
     }
 
