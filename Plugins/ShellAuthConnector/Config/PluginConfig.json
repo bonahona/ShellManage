@@ -1,0 +1,14 @@
+{
+    "Plugin":
+    {
+    },
+    "ShellApplication": {
+        "Name": "Share",
+        "PublicKey": "-"
+    },
+    "ShellAuthServer": {
+        "Server": "auth-site",
+        "Port" : "80",
+        "MethodPath": "/api"
+    }
+}

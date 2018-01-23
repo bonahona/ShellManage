@@ -6,7 +6,7 @@ class ShellAuthHelper implements  IHelper
 
     public $ShellAuthServer;
     public $ShellAuthPort;
-    public $ShellAuthMethodPaths;
+    public $ShellAuthMethodPath;
     public $Controller;
 
     public function Init($config, $controller)
@@ -16,7 +16,7 @@ class ShellAuthHelper implements  IHelper
 
         $this->ShellAuthServer = $config['ShellAuthServer']['Server'];
         $this->ShellAuthPort = $config['ShellAuthServer']['Port'];
-        $this->ShellAuthMethodPaths = $config['ShellAuthServer']['MethodPaths'];
+        $this->ShellAuthMethodPath = $config['ShellAuthServer']['MethodPath'];
 
         $this->Controller = $controller;
     }
@@ -27,7 +27,8 @@ class ShellAuthHelper implements  IHelper
             'ShellApplication' => $application
         );
 
-        $callPath = $this->GetApplicationPath('CreateApplication');
+        $callPath = $this->GetApplicationPath();
+
         return $this->SendToServer($payLoad, $callPath);
     }
 
@@ -97,19 +98,39 @@ class ShellAuthHelper implements  IHelper
 
     public function Login($username, $password)
     {
-        $payLoad = array(
-            'ShellUser' => array(
-                'Username' => $username,
-                'Password' => $password,
-            )
-        );
+        $payLoad = "mutation{
+	Login(
+		username: \"$username\",
+		password: \"$password\",
+		application: \"$this->ApplicationName\"
+	){
+		Guid,
+		Expires,
+		Issued,
+		ShellUserPrivilege{
+			ShellUser{
+				Id,
+				DisplayName,
+				Username,
+				IsActive
+			}
+		}
+	}
+}";
 
-        $callPath = $this->GetApplicationPath('Login');
-        $response =  $this->SendToServer($payLoad, $callPath);
+        $response =  $this->SendToServer($payLoad);
 
-        if($response['Error'] == 0){
-            $this->Controller->Session['SessionToken'] = $response['Data']['AccessToken'];
-            $this->Controller->SetLoggedInUser($response['Data']['User']);
+        if(count($response['errors']) == 0){
+            $this->Controller->Session['SessionToken'] = $response['data']['Login']['Guid'];
+            $user = $response['data']['Login']['ShellUserPrivilege']['ShellUser'];
+            $this->Controller->SetLoggedInUser($user);
+
+            // Check if a local user exists, and if not, create on
+            $userId = $user['Id'];
+            if(!$this->Controller->Models->LocalUser->Any(array('ShellUserId' => $userId))){
+                $localUser = $this->Controller->Models->LocalUser->Create(array('ShellUserId' => $userId));
+                $localUser->Save();
+            }
         }
 
         return $response;
@@ -153,6 +174,7 @@ class ShellAuthHelper implements  IHelper
         }
 
         $callPath = $this->GetApplicationPath('GetUser');
+
         return $this->SendToServer($payLoad, $callPath);
     }
 
@@ -179,26 +201,27 @@ class ShellAuthHelper implements  IHelper
         return $this->SendToServer($payLoad, $callPath);
     }
 
-    protected function GetApplicationPath($callName)
+    public function GetUserApplicationPrivileges($userId)
     {
-        if(!array_key_exists($callName, $this->ShellAuthMethodPaths)){
-            die("ShellAuthHelper callpath $callName does not exists");
-        }
-        $result = 'http://' . $this->ShellAuthServer . ":" . $this->ShellAuthPort . $this->ShellAuthMethodPaths[$callName];
+        $payLoad = array(
+            'Id' => $userId
+        );
+
+        $callPath = $this->GetApplicationPath('GetUserApplicationPrivileges');
+        return $this->SendToServer($payLoad, $callPath);
+    }
+
+    protected function GetApplicationPath()
+    {
+        $result = 'http://' . $this->ShellAuthServer . ":" . $this->ShellAuthPort . $this->ShellAuthMethodPath;
 
         return $result;
     }
 
-    protected function SendToServer($payload, $callPath)
+    protected function SendToServer($payload)
     {
-        $data = array(
-            'ShellAuth' => array(
-                'Application' => array(
-                    'ApplicationName' => $this->ApplicationName
-                ),
-                'PayLoad' => $payload
-            )
-        );
+        $callPath = $this->GetApplicationPath();
+        $data = ['query' => $payload];
 
         $data = json_encode($data);
 
@@ -207,23 +230,23 @@ class ShellAuthHelper implements  IHelper
         curl_setopt($curl, CURLOPT_POST, 1);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_USERAGENT, "ShellAuthConnector");
-        curl_setopt($curl, CURLOPT_POSTFIELDS, array(
-            'data' => $data
-        ));
+        curl_setopt($curl, CURLOPT_HTTPHEADER,     array('Content-Type: text/plain'));
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
 
         if(!$response = curl_exec($curl)){
             $curlError = curl_error($curl);
             //$curlErrorCode = curl_errno($curl);
 
             return array(
-                'Error' => 1,
-                    'ErrorList' => array(
-                        $curlError
-                    )
+                'data' => [],
+                'errors' => [
+                    $curlError
+                ]
             );
         }
 
         curl_close($curl);
+
         return json_decode($response, true);
     }
 }
