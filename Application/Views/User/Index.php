@@ -18,7 +18,7 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($Users as $user):?>
+                <?php foreach($Users['ShellUsers'] as $user):?>
                     <tr>
                         <td><a href="<?php echo "/User/Details/" . $user['Id'];?>"><?php echo $user['DisplayName'];?></a></td>
                         <td><?php echo $user['Username'];?></td>

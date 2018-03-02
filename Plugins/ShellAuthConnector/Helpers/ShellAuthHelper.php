@@ -138,44 +138,33 @@ class ShellAuthHelper implements  IHelper
 
     public function Logout($accessToken = null)
     {
-        if($accessToken == null){
-            $accessToken = $this->Controller->Session['SessionToken'];
-        }
-        $payLoad = array(
-            'AccessToken' => $accessToken
-        );
-
-        $callPath = $this->GetApplicationPath('Logout');
         $this->Controller->Session->Destroy();
-        return $this->SendToServer($payLoad, $callPath);
-    }
-
-    public function CheckAccessToken($accessToken = null)
-    {
-        if($accessToken == null){
-            $accessToken = $this->Controller->Session['SessionToken'];
-        }
-        $payLoad = array(
-            'AccessToken' => $accessToken
-        );
-
-        $callPath = $this->GetApplicationPath('CheckAccessToken');
-        return $this->SendToServer($payLoad, $callPath);
     }
 
     public function GetUser($id = null)
     {
-        if($id != null){
-            $payLoad = array(
-                'Id' => $id
-            );
-        }else{
-            $payLoad = array();
-        }
+        $payload = 'query{
+	ShellUser(id: "' . $id . '""){
+		Id,
+		Username,
+		DisplayName,
+		IsActive
+	}
+}';
+        return $this->SendToServer($payload);
+    }
 
-        $callPath = $this->GetApplicationPath('GetUser');
-
-        return $this->SendToServer($payLoad, $callPath);
+    public function GetUsers()
+    {
+        $payload = 'query{
+	ShellUsers{
+		Id,
+		Username,
+		DisplayName,
+		IsActive
+	}
+}';
+        return $this->SendToServer($payload);
     }
 
     public function GetLocalUsers()
@@ -225,12 +214,17 @@ class ShellAuthHelper implements  IHelper
 
         $data = json_encode($data);
 
+        $headers = [
+            'Content-Type: application/json',
+            'Authorization: ' . $this->Controller->Session['SessionToken']
+        ];
+
         $curl = curl_init();
         curl_setopt($curl, CURLOPT_URL, $callPath);
         curl_setopt($curl, CURLOPT_POST, 1);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
         curl_setopt($curl, CURLOPT_USERAGENT, "ShellAuthConnector");
-        curl_setopt($curl, CURLOPT_HTTPHEADER,     array('Content-Type: text/plain'));
+        curl_setopt($curl, CURLOPT_HTTPHEADER, $headers);
         curl_setopt($curl, CURLOPT_POSTFIELDS, $data);
 
         if(!$response = curl_exec($curl)){

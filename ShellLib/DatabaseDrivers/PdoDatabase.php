@@ -539,7 +539,7 @@ class PdoDatabase implements IDatabaseDriver
         $sqlStatement = "delete from $tableName";
         if(!$preparedStatement = $this->Database->prepare($sqlStatement)){
             echo "Failed to prepare PDO statement";
-            var_dump($this->Database->erroInfo());
+            var_dump($this->Database->errorInfo());
         }
 
         $preparedStatement->execute();

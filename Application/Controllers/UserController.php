@@ -12,12 +12,10 @@ class UserController extends Controller
 
     public function Index()
     {
-        $response = $this->Helpers->ShellAuth->GetUser();
-        if($response['Error'] == 0){
-            $this->Set('Users', $response['Data']);
-        }else{
-            $this->Set('Users', array());
-        }
+        $this->Title = 'Manage Users';
+
+        $response = $this->Helpers->ShellAuth->GetUsers();
+        $this->Set('Users', $response['data']);
 
         return $this->View();
     }
@@ -178,8 +176,8 @@ class UserController extends Controller
 
             $response = $this->Helpers->ShellAuth->Login($user['Username'], $user['Password']);
 
-            if($response['Error'] != 0){
-                foreach($response['ErrorList'] as $error){
+            if(isset($response['errors'])){
+                foreach($response['errors'] as $error){
                     $this->ModelValidation->AddError('User', 'Password', $error);
                 }
             }
