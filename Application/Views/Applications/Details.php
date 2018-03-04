@@ -4,10 +4,10 @@
     <div class="col-lg-4">
         <dl>
             <dt>Application Name</dt>
-            <dd><?php echo $Application['ApplicationName'];?></dd>
+            <dd><?php echo $Application['ShellApplication']['Name'];?></dd>
             <dt>Is inactive</dt>
             <dd>
-                <?php if($Application['IsInactive']):?>
+                <?php if($Application['ShellApplication']['IsActive'] == 0):?>
                     <span>Yes</span>
                 <?php else:?>
                     <span>No</span>
@@ -15,10 +15,10 @@
             </dd>
             <dt>RSA Public Key</dt>
             <dd>
-                <?php if(empty($Application['RsaPublicKey'])):?>
+                <?php if(empty($Application['ShellApplication']['RsaPublicKey'])):?>
                     <span class="light-grey">Empty</span>
                 <?php else:?>
-                    <?php echo $Application['RsaPublicKey'];?></dd>
+                    <?php echo $Application['ShellApplication']['RsaPublicKey'];?></dd>
                 <?php endif;?>
         </dl>
     </div>

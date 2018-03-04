@@ -49,18 +49,30 @@ class ShellAuthHelper implements  IHelper
         return $this->SendToServer($payLoad, $callPath);
     }
 
-    public function GetApplication($id = null)
+    public function GetApplications()
     {
-        if($id == null){
-            $payLoad = array();
-        }else{
-            $payLoad = array(
-                'Id' => $id
-            );
-        }
+        $payload = "query{
+	ShellApplications {
+		Id,
+		Name,
+		IsActive
+	}
+}";
+        return $this->SendToServer($payload);
+    }
 
-        $callPath = $this->GetApplicationPath('GetApplication');
-        return $this->SendToServer($payLoad, $callPath);
+    public function GetApplication($id)
+    {
+        $payload = "query{
+	ShellApplication(id: \"$id\") {
+		Id,
+		Name,
+		IsActive,
+		RsaPublicKey,
+		DefaultUserLevel
+	}
+}";
+        return $this->SendToServer($payload);
     }
 
     public function CreateUser($shellUser)

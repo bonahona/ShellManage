@@ -16,9 +16,9 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($Applications as $application):?>
+                <?php foreach($Applications['ShellApplications'] as $application):?>
                     <tr>
-                        <td><a href="<?php echo "/Applications/Details/" . $application['Id'];?>"><?php echo $application['ApplicationName'];?></a></td>
+                        <td><a href="<?php echo "/Applications/Details/" . $application['Id'];?>"><?php echo $application['Name'];?></a></td>
                         <td><?php echo $application['DefaultUserLevel'];?></td>
                         <td><a href="<?php echo "/Applications/Edit/" . $application['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-edit"></span></a></td>
                         <td><a href="<?php echo "/Applications/Delete/" . $application['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-trash"></span></a></td>

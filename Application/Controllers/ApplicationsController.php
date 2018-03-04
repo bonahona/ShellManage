@@ -12,8 +12,8 @@ class ApplicationsController extends Controller
     {
         $this->Title = 'Applications';
 
-        $applications = $this->Helpers->ShellAuth->GetApplication();
-        $this->Set('Applications', $applications['Data']);
+        $applications = $this->Helpers->ShellAuth->GetApplications();
+        $this->Set('Applications', $applications['data']);
         return $this->View();
     }
 
@@ -26,8 +26,8 @@ class ApplicationsController extends Controller
         }
 
         $response = $this->Helpers->ShellAuth->GetApplication($id);
-        $application = First($response['Data']);
-        $this->Set('Application', $application);
+        $this->Set('Application', $response['data']);
+
         return $this->View();
     }
 
@@ -69,7 +69,7 @@ class ApplicationsController extends Controller
             $shellApplication = $this->Data->RawParse('ShellApplication');
 
             $response = $this->Helpers->ShellAuth->EditApplication($shellApplication);
-            if($response['Error'] == 0){
+            if($response['data']['errors'] == 0){
                 return $this->Redirect('/Applications/');
             }else{
                 $this->Set('ShellApplication', $shellApplication);
@@ -84,9 +84,8 @@ class ApplicationsController extends Controller
             }
 
             $response = $this->Helpers->ShellAuth->GetApplication($id);
-            $shellApplication = $response['Data'][0];
 
-            $this->Set('ShellApplication', $shellApplication);
+            $this->Set('ShellApplication', $response['data']['ShellApplication']);
             return $this->View();
         }
     }
