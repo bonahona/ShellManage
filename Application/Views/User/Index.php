@@ -11,7 +11,7 @@
         <table class="table table-responsive">
             <thead>
                 <tr>
-                    <th class="col-lg-5">Name</th>
+                    <th class="col-lg-5">Display name</th>
                     <th class="col-lg-5">Username</th>
                     <th class="col-lg-1">&nbsp;</th>
                     <th class="col-lg-1">&nbsp;</th>

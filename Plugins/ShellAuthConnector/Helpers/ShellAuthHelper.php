@@ -65,22 +65,43 @@ class ShellAuthHelper implements  IHelper
 
     public function CreateUser($shellUser)
     {
-        $payLoad = array(
-            'ShellUser' => $shellUser
-        );
+        $username = $shellUser['Username'];
+        $displayName = $shellUser['DisplayName'];
+        $password =$shellUser['Password'];
 
-        $callPath = $this->GetApplicationPath('CreateUser');
-        return $this->SendToServer($payLoad, $callPath);
+        $payLoad = "mutation{
+	ShellUser(
+		Username: \"$username\",
+		DisplayName: \"$displayName\",
+		Password: \"$password\"
+	){
+		Id,
+		Username,
+		DisplayName
+	}
+}";
+        return $this->SendToServer($payLoad);
     }
 
     public function EditUser($shellUser)
     {
-        $payLoad = array(
-            'ShellUser' => $shellUser
-        );
+        $id = $shellUser['Id'];
+        $username = $shellUser['Username'];
+        $displayName = $shellUser['DisplayName'];
 
-        $callPath = $this->GetApplicationPath('EditUser');
-        return $this->SendToServer($payLoad, $callPath);
+        $payLoad = "mutation{
+	ShellUser(
+		Id: \"$id\",
+		Username: \"$username\",
+		DisplayName: \"$displayName\"
+	){
+		Id,
+		Username,
+		DisplayName
+	}
+}";
+
+        return $this->SendToServer($payLoad);
     }
 
     public function ResetPassword($userId, $password)
@@ -92,8 +113,7 @@ class ShellAuthHelper implements  IHelper
             )
         );
 
-        $callPath = $this->GetApplicationPath('ResetPassword');
-        return $this->SendToServer($payLoad, $callPath);
+        return $this->SendToServer($payLoad);
     }
 
     public function Login($username, $password)
@@ -141,16 +161,26 @@ class ShellAuthHelper implements  IHelper
         $this->Controller->Session->Destroy();
     }
 
-    public function GetUser($id = null)
+    public function GetUser($id)
     {
-        $payload = 'query{
-	ShellUser(id: "' . $id . '""){
+        $payload = "query{
+	ShellUser(id: \"$id\")
+	{
 		Id,
 		Username,
 		DisplayName,
-		IsActive
+		IsActive,
+		Privileges{
+			ShellApplication{
+				Id,
+				Name,
+				IsActive
+			},
+			UserLevel
+		}
 	}
-}';
+}";
+
         return $this->SendToServer($payload);
     }
 

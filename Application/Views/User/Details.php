@@ -4,23 +4,23 @@
     <div class="col-lg-4">
         <dl>
             <dt>Usermame</dt>
-            <dd><?php echo $User['Username'];?></dd>
+            <dd><?php echo $User['ShellUser']['Username'];?></dd>
             <dt>Displayname</dt>
-            <dd><?php echo $User['DisplayName'];?></dd>
+            <dd><?php echo $User['ShellUser']['DisplayName'];?></dd>
         </dl>
     </div>
 </div>
 <div class="row">
-    <div class="col-lg-3">
+    <div class="col-lg-3 col-md-6 col-sm-12 col-xs-12">
         <div class="row">
             <div class="col-lg-5">
-                <a href="<?php echo "/User/ResetPassword/" . $User['Id'];?>" class="btn btn-default"><span class="glyphicon glyphicon-repeat"></span>Reset password</a>
+                <a href="<?php echo "/User/ResetPassword/" . $User['ShellUser']['Id'];?>" class="btn btn-default"><span class="glyphicon glyphicon-repeat"></span>Reset password</a>
             </div>
             <div class="col-lg-2">
-                <a href="<?php echo "/User/Edit/" . $User['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-edit"></span></a>
+                <a href="<?php echo "/User/Edit/" . $User['ShellUser']['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-edit"></span></a>
             </div>
             <div class="col-lg-2">
-                <a href="<?php echo "/User/Delete/" . $User['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-trash"></span></a>
+                <a href="<?php echo "/User/Delete/" . $User['ShellUser']['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-trash"></span></a>
             </div>
         </div>
     </div>
@@ -39,15 +39,15 @@
             </tr>
             </thead>
             <tbody>
-                <?php foreach($User['ShellUserPrivileges'] as $privilege):?>
+                <?php foreach($User['ShellUser']['Privileges'] as $privilege):?>
                     <tr>
-                        <td><?php echo $privilege['ShellApplication']['ApplicationName'];?></td>
+                        <td><?php echo $privilege['ShellApplication']['Name'];?></td>
                         <td><?php echo $privilege['UserLevel'];?></td>
                         <td>
                             <?php if($privilege['UserLevel'] == 0):?>
-                                <a href="<?php echo "/User/GrantAccess/" . $privilege['ShellUserId'] . "/" . $privilege['ShellApplicationId'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-up"></span></a>
+                                <a href="<?php echo "/User/GrantAccess/" . $User['ShellUser']['Id'] . "/" . $privilege['ShellApplication']['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-up"></span></a>
                             <?php else:?>
-                                <a href="<?php echo "/User/RevokeAccess/" . $privilege['ShellUserId'] . "/" . $privilege['ShellApplicationId'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-down"></span></a>
+                                <a href="<?php echo "/User/RevokeAccess/" . $User['ShellUser']['Id'] . "/" . $privilege['ShellApplication']['Id'];?>" class="btn btn-md btn-default"><span class="glyphicon glyphicon-chevron-down"></span></a>
                             <?php endif;?>
                         </td>
                     </tr>

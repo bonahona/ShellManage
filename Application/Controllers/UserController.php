@@ -39,11 +39,7 @@ class UserController extends Controller
         }
 
         $response = $this->Helpers->ShellAuth->GetUser($id);
-
-        if($response['Error'] == 0){
-            $user = $response['Data'][0];
-            $this->Set('User', $user);
-        }
+        $this->Set('User', $response['data']);
 
         return $this->View();
     }
@@ -76,6 +72,8 @@ class UserController extends Controller
 
     public function Edit($id)
     {
+        $this->Title = "Edit User";
+
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
@@ -92,7 +90,7 @@ class UserController extends Controller
             }
         }else{
             $response = $this->Helpers->ShellAuth->GetUser($id);
-            $this->Set('ShellUser', $response['Data'][0]);
+            $this->Set('ShellUser', $response['data']['ShellUser']);
             return $this->View();
         }
     }
@@ -182,11 +180,12 @@ class UserController extends Controller
                 }
             }
 
+            $ref = $this->Get['ref'];
             if($this->ModelValidation->Valid()) {
                 if($ref == null || $ref == ""){
                     return $this->Redirect('/');
                 }else{
-                    $this->Redirect($ref);
+                    return $this->Redirect($ref);
                 }
             }
 
@@ -206,10 +205,6 @@ class UserController extends Controller
     public function CheckAccessToken()
     {
         var_dump($this->Helpers->ShellAuth->CheckAccessToken());
-    }
-    public function Get($id)
-    {
-        var_dump($this->Helpers->ShellAuth->GetUser($id));
     }
 
     public function SetPrivilegeLevel($userLevel)
