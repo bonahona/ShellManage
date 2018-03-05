@@ -21,6 +21,18 @@ class ShellAuthHelper implements  IHelper
         $this->Controller = $controller;
     }
 
+    public function GetApplicationLinks()
+    {
+        $payload = "query{
+	ShellApplications(showInMenu: 1){
+		Id,
+		MenuName,
+		Url
+	}
+}";
+        return $this->SendToServer($payload);
+    }
+
     public function CreateApplication($application)
     {
         $payLoad = array(
@@ -34,12 +46,29 @@ class ShellAuthHelper implements  IHelper
 
     public function EditApplication($application)
     {
-        $payload = array(
-            'ShellApplication' => $application
-        );
+        $id = $application['Id'];
+        $name = $application['Name'];
+        $isActive = (int)isset($application['IsActive']);
+        $defaultUserLevel = $application['DefaultUserLevel'];
+        $rsaPublicKey = $application['RsaPublicKey'];
 
-        $callPath = $this->GetApplicationPath('EditApplication');
-        return $this->SendToServer($payload, $callPath);
+        $payload = "mutation{
+	ShellApplication(
+		Id: \"$id\",
+		Name: \"$name\",
+		IsActive: $isActive,
+		DefaultUserLevel: $defaultUserLevel,
+		RsaPublicKey: \"$rsaPublicKey\"
+	){
+		Id,
+		Name,
+		IsActive,
+		DefaultUserLevel,
+		RsaPublicKey
+	}
+}";
+
+        return $this->SendToServer($payload);
     }
 
     public function DeleteApplication($id)
