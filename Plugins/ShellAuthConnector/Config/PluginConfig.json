@@ -4,6 +4,7 @@
     },
     "ShellApplication": {
         "Name": "Share",
+        "LocalId": "1",
         "PublicKey": "-"
     },
     "ShellAuthServer": {

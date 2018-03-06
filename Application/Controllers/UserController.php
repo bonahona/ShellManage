@@ -33,7 +33,7 @@ class UserController extends Controller
 
         $response = $this->Helpers->ShellAuth->GetLocalUsers();
 
-        $this->Set('Users', $response['Data']);
+        $this->Set('LocalUsers', $response['data']);
         return $this->View();
     }
 
@@ -130,34 +130,37 @@ class UserController extends Controller
         }
     }
 
-    public function GrantAccess($id, $applicationId = null)
+    public function GrantAccess($id)
     {
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
 
-        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(1, $id, $applicationId);
+        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel($id, 1);
 
-
-        if(isset($_GET['ref'])){
-            return $this->Redirect($_GET['ref']);
-        }else {
-            return $this->Redirect('/User/Details/' . $id);
+        if(!isset($response['errors'])) {
+            if (isset($_GET['ref'])) {
+                return $this->Redirect($_GET['ref']);
+            } else {
+                return $this->Redirect('/User/Details/' . $id);
+            }
         }
     }
 
-    public function RevokeAccess($id, $applicationId = null)
+    public function RevokeAccess($id)
     {
         if($id == null || $id == ""){
             return $this->HttpNotFound();
         }
 
-        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel(0, $id, $applicationId);
+        $response = $this->Helpers->ShellAuth->SetPrivilegeLevel($id, 0);
 
-        if(isset($_GET['ref'])){
-            return $this->Redirect($_GET['ref']);
-        }else {
-            return $this->Redirect('/User/Details/' . $id);
+        if(!isset($response['errors'])) {
+            if (isset($_GET['ref'])) {
+                return $this->Redirect($_GET['ref']);
+            } else {
+                return $this->Redirect('/User/Details/' . $id);
+            }
         }
     }
 

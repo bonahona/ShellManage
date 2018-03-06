@@ -1,5 +1,4 @@
 <h1>Local users</h1>
-
 <div class="row">
     <div class="col-lg-2">
         <a href="/User/Create/" class="btn btn-md- btn-primary">Create new</a>
@@ -18,16 +17,26 @@
                 </tr>
             </thead>
             <tbody>
-                <?php foreach($Users as $user):?>
+                <?php foreach($LocalUsers['ShellApplication']['Privileges'] as $privilege):?>
                     <tr>
-                        <td><?php echo $user['User']['DisplayName'];?></td>
-                        <td><a href="<?php echo "/User/Details/" . $user['User']['Id'];?>"><?php echo $user['User']['Username'];?></a></td>
-                        <td><?php echo $user['UserLevel'];?></td>
                         <td>
-                            <?php if($user['UserLevel'] == 0):?>
-                                <a href="<?php echo "/User/GrantAccess/" . $user['User']['Id'] . "?ref=" . $this->RequestString;?>" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-ok"></span></a>
+                            <?php echo $privilege['ShellUser']['DisplayName'];?>
+                        </td>
+                        <td>
+                            <a href="<?php echo "/User/Details/" . $privilege['ShellUser']['Id'];?>">
+                                <?php echo $privilege['ShellUser']['Username'];?>
+                            </a>
+                        </td>
+                        <td><?php echo $privilege['UserLevel'];?></td>
+                        <td>
+                            <?php if($privilege['UserLevel'] == 0):?>
+                                <a href="<?php echo "/User/GrantAccess/" . $privilege['Id'] . "?ref=" . $this->RequestString;?>" class="btn btn-sm btn-default">
+                                    <span class="glyphicon glyphicon-ok"></span>
+                                </a>
                             <?php else:?>
-                                <a href="<?php echo "/User/RevokeAccess/" . $user['User']['Id'] . "?ref=" . $this->RequestString;?>" class="btn btn-sm btn-default"><span class="glyphicon glyphicon-remove"></span></a>
+                                <a href="<?php echo "/User/RevokeAccess/" . $privilege['Id'] . "?ref=" . $this->RequestString;?>" class="btn btn-sm btn-default">
+                                    <span class="glyphicon glyphicon-remove"></span>
+                                </a>
                             <?php endif;?>
                         </td>
                     </tr>

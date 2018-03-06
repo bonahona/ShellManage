@@ -7,12 +7,15 @@ class ShellAuthHelper implements  IHelper
     public $ShellAuthServer;
     public $ShellAuthPort;
     public $ShellAuthMethodPath;
+    public $LocalApplicationId;
+
     public $Controller;
 
     public function Init($config, $controller)
     {
         $this->ApplicationName = $config['ShellApplication']['Name'];
         $this->PublicKey = $config['ShellApplication']['PublicKey'];
+        $this->LocalApplicationId = $config['ShellApplication']['LocalId'];
 
         $this->ShellAuthServer = $config['ShellAuthServer']['Server'];
         $this->ShellAuthPort = $config['ShellAuthServer']['Port'];
@@ -35,13 +38,27 @@ class ShellAuthHelper implements  IHelper
 
     public function CreateApplication($application)
     {
-        $payLoad = array(
-            'ShellApplication' => $application
-        );
+        $name = $application['Name'];
+        $isActive = (int)isset($application['IsActive']);
+        $defaultUserLevel = $application['DefaultUserLevel'];
+        $rsaPublicKey = $application['RsaPublicKey'];
 
-        $callPath = $this->GetApplicationPath();
+        $payload = "mutation{
+	ShellApplication(
+		Name: \"$name\",
+		IsActive: $isActive,
+		DefaultUserLevel: $defaultUserLevel,
+		RsaPublicKey: \"$rsaPublicKey\"
+	){
+		Id,
+		Name,
+		IsActive,
+		DefaultUserLevel,
+		RsaPublicKey
+	}
+}";
 
-        return $this->SendToServer($payLoad, $callPath);
+        return $this->SendToServer($payload);
     }
 
     public function EditApplication($application)
@@ -240,25 +257,41 @@ class ShellAuthHelper implements  IHelper
 
     public function GetLocalUsers()
     {
-        $callPath = $this->GetApplicationPath('GetLocalUsers');
-        return $this->SendToServer(array(), $callPath);
+        $id = $this->LocalApplicationId;
+
+        $payload = "
+        query{
+	ShellApplication(id: \"$id\"){
+		Id,
+		Privileges{
+		    Id,
+			UserLevel
+			ShellUser{
+				Id,
+				Username,
+				DisplayName				
+			}
+		}
+	}
+}";
+
+        return $this->SendToServer($payload);
     }
 
-    public function SetPrivilegeLevel($userLevel, $userId, $applicationId = null)
+    public function SetPrivilegeLevel($privilegeId, $userLevel)
     {
-        $payLoad = array(
-            'ShellUserPrivilege' => array(
-                'ShellUserId' => $userId,
-                'UserLevel' => $userLevel
-            )
-        );
+        $payLoad = "
+        mutation{
+	ShellUserPrivilege(
+		Id: \"$privilegeId\",
+		UserLevel: $userLevel
+	){
+		ShellUserId,
+		UserLevel
+	}
+}";
 
-        if($applicationId != null){
-            $payLoad['ShellUserPrivilege']['ShellApplicationId'] = $applicationId;
-        }
-
-        $callPath = $this->GetApplicationPath('SetPrivilegeLevel');
-        return $this->SendToServer($payLoad, $callPath);
+        return $this->SendToServer($payLoad);
     }
 
     public function GetUserApplicationPrivileges($userId)
