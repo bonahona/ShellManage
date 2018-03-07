@@ -234,8 +234,14 @@ class ShellAuthHelper implements  IHelper
 				Name,
 				IsActive
 			},
+			Id,
 			UserLevel
 		}
+	},
+	ShellApplications{
+		Id,
+		Name,
+		IsActive
 	}
 }";
 
@@ -292,6 +298,22 @@ class ShellAuthHelper implements  IHelper
 }";
 
         return $this->SendToServer($payLoad);
+    }
+
+    public function CreatePrivilege($applicationId, $userId, $userLevel)
+    {
+        $payload = "
+        mutation{
+	ShellUserPrivilege(
+		ShellUserId: \"$applicationId\",
+		ShellApplicationId: \"$userId\",
+		UserLevel: $userLevel
+	){
+		Id,
+		UserLevel
+	}
+}";
+        return $this->SendToServer($payload);
     }
 
     public function GetUserApplicationPrivileges($userId)

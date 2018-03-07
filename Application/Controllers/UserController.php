@@ -46,7 +46,32 @@ class UserController extends Controller
         }
 
         $response = $this->Helpers->ShellAuth->GetUser($id);
+
+        if(isset($response['errors'])){
+            return $this>$this->HttpNotFound();
+        }
+
+        if($response['data']['ShellUser'] == null){
+            return $this->HttpNotFound();
+        }
+
         $this->Set('User', $response['data']);
+
+        $otherApplications = array();
+        foreach($response['data']['ShellApplications'] as $application){
+            $found = false;
+            foreach($response['data']['ShellUser']['Privileges'] as $privilege){
+                if($privilege['ShellApplication']['Id'] == $application['Id']){
+                    $found = true;
+                }
+            }
+
+            if(!$found){
+                $otherApplications[] = $application;
+            }
+        }
+
+        $this->Set('OtherApplications', $otherApplications);
 
         return $this->View();
     }
@@ -142,7 +167,7 @@ class UserController extends Controller
             if (isset($_GET['ref'])) {
                 return $this->Redirect($_GET['ref']);
             } else {
-                return $this->Redirect('/User/Details/' . $id);
+                return $this->Redirect('/User/Details/' . $response['data']['ShellUserPrivilege']['ShellUserId']);
             }
         }
     }
@@ -159,7 +184,24 @@ class UserController extends Controller
             if (isset($_GET['ref'])) {
                 return $this->Redirect($_GET['ref']);
             } else {
-                return $this->Redirect('/User/Details/' . $id);
+                return $this->Redirect('/User/Details/' . $response['data']['ShellUserPrivilege']['ShellUserId']);
+            }
+        }
+    }
+
+    public function CreateAccess($userId = null, $applicationId = null)
+    {
+        if($userId == null || $applicationId == null){
+            return $this->HttpNotFound();
+        }
+
+        $response = $this->Helpers->ShellAuth->CreatePrivilege($userId, $applicationId, 1);
+
+        if(!isset($response['errors'])){
+            if (isset($_GET['ref'])) {
+                return $this->Redirect($_GET['ref']);
+            } else {
+                return $this->Redirect('/User/Details/' . $userId);
             }
         }
     }
