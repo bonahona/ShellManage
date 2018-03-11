@@ -164,14 +164,15 @@ class ShellAuthHelper implements  IHelper
 
     public function ResetPassword($userId, $password)
     {
-        $payLoad = array(
-            'ShellUser' => array(
-                'Id' => $userId,
-                'Password' => $password
-            )
-        );
-
-        return $this->SendToServer($payLoad);
+        $payload = "mutation{
+	ShellUser(
+		Id: \"$userId\",
+		Password: \"$password\"
+	){
+		Id
+	}
+}";
+        return $this->SendToServer($payload);
     }
 
     public function Login($username, $password)

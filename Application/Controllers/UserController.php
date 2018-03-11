@@ -137,18 +137,21 @@ class UserController extends Controller
 
         if($this->IsPost() && !$this->Data->IsEmpty()){
             $user = $this->Data->RawParse('ShellUser');
+            $password = $user['Password'];
             $response = $this->Helpers->ShellAuth->ResetPassword($user['Id'], $user['Password']);
-            if($response['Error'] == 0){
+            if(!isset($response['error'])){
                 return $this->Redirect('/User/');
             }else{
-                $this->ModelValidation('ShellUser', 'Password', $response['ErrorList']);
+                $response = $this->Helpers->ShellAuth->GetUser($id );
+                $user = $response['data']['ShellUser'];
+                $user['Password'] = $password;
                 $this->Set('ShellUser', $user);
                 return $this->View();
             }
         }else{
-            $response = $this->Helpers->ShellAuth->GetUser($id);
+            $response = $this->Helpers->ShellAuth->GetUser($id );
 
-            $user = $response['Data'][0];
+            $user = $response['data']['ShellUser'];
             $user['Password'] = '';
             $this->Set('ShellUser', $user);
             return $this->View();

@@ -10,7 +10,7 @@
         <?php echo $this->Form->Hidden('DisplayName');?>
 
         <div class="form-group">
-            <label>Display Name</label>
+            <label>New password</label>
             <?php echo $this->Form->Password('Password', array('attributes' => array('class' => 'form-control')));?>
             <?php echo $this->Form->ValidationErrorFor('Password');?>
         </div>
