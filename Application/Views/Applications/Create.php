@@ -1,8 +1,9 @@
 <h1>Create application</h1>
 
+<?php echo $this->Form->Start('ShellApplication');?>
 <div class="row">
     <div class="col-lg-4">
-        <?php echo $this->Form->Start('ShellApplication');?>
+        <h2>General</h2>
         <div class="form-group">
             <label>Applicatiom Name</label>
             <?php echo $this->Form->Input('Name', array('attributes' => array('class' => 'form-control')));?>
@@ -15,19 +16,39 @@
             <label>Public key</label>
             <?php echo $this->Form->Input('RsaPublicKey', array('attributes' => array('class' => 'form-control')));?>
         </div>
-        <div class="form-group">
-            <label>Private key</label>
-            <?php echo $this->Form->Input('RsaPrivateKey', array('attributes' => array('class' => 'form-control')));?>
-        </div>
         <div class="clear"></div>
         <div>
             <label>Is inactive</label>
-            <?php echo $this->Form->Bool('IsActive', array('value' => 1));?>
+            <?php echo $this->Form->Bool('IsActive');?>
         </div>
-        <?php echo $this->Form->Submit('Create', array('attributes' => array('class' => 'btn btn-md btn-default')));?>
-        <?php echo $this->Form->End();?>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <h2>Global menu</h2>
+        <div>
+            <label>Show in menu</label>
+            <?php echo $this->Form->Bool('ShowInMenu');?>
+        </div>
+        <div class="form-group">
+            <label>Menu name</label>
+            <?php echo $this->Form->Input('MenuName', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+        <div class="form-group">
+            <label>Url</label>
+            <?php echo $this->Form->Input('Url', array('attributes' => array('class' => 'form-control')));?>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4">
+        <?php echo $this->Form->Submit('Save', array('attributes' => array('class' => 'btn btn-md btn-default')));?>
+    </div>
+</div>
+
+<?php echo $this->Form->End();?>
 
 <div class="row">
     <div class="col-lg-4">
