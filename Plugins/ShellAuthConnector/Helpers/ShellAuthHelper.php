@@ -27,10 +27,10 @@ class ShellAuthHelper implements  IHelper
     public function GetApplicationLinks()
     {
         $payload = "query{
-	ShellApplications(showInMenu: 1){
+	PublicApplications{
 		Id,
-		MenuName,
-		Url
+		Url,
+		MenuName
 	}
 }";
         return $this->SendToServer($payload);

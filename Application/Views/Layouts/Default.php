@@ -32,7 +32,7 @@
                     <ul class="dropdown-menu">
                         <?php foreach($ApplicationLinks['ShellApplications'] as $applicationLink):?>
                             <li class="navbar-brand">
-                                <a href="<?php echo $applicationLink['Url'];?>">
+                                <a href="<?php echo "http://" . $applicationLink['Url'];?>">
                                     <?php echo $applicationLink['MenuName'];?>
                                 </a>
                             </li>
