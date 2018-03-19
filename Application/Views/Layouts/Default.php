@@ -30,7 +30,7 @@
                         <span class="caret"></span>
                     </a>
                     <ul class="dropdown-menu">
-                        <?php foreach($ApplicationLinks['ShellApplications'] as $applicationLink):?>
+                        <?php foreach($ApplicationLinks['PublicApplications'] as $applicationLink):?>
                             <li class="navbar-brand">
                                 <a href="<?php echo "http://" . $applicationLink['Url'];?>">
                                     <?php echo $applicationLink['MenuName'];?>
