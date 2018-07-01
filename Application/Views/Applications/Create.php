@@ -5,7 +5,7 @@
     <div class="col-lg-4">
         <h2>General</h2>
         <div class="form-group">
-            <label>Applicatiom Name</label>
+            <label>Application Name</label>
             <?php echo $this->Form->Input('Name', array('attributes' => array('class' => 'form-control')));?>
         </div>
         <div class="form-group">
